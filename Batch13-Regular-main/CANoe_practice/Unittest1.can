@@ -1,0 +1,24 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  int a=21;
+  int b=56;
+  timer t1;
+}
+
+on key 'k'
+{
+  setTimer(t1.1000);
+}
+
+void MainTest()
+{
+  write(" I am from timer t1");
+  setTimer(t1,1000); 
+}
+

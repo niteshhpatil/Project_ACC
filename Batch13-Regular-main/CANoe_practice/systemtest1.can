@@ -1,0 +1,27 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  timer t1;
+}
+
+on key 'v'
+{
+  setTimer(t1,1000);
+}
+
+
+on timer t1
+{
+  write("test");
+}
+
+void MainTest ()
+{
+  TestWaitForTimeout(10000);
+}
+

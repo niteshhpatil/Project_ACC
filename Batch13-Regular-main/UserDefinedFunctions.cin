@@ -1,0 +1,65 @@
+/*@!Encoding:1252*/
+void myfunc()
+{
+  byte value;
+  value=10;
+  write("Value = %d",value);
+  value=35;
+}
+
+void Printme(double num)
+{
+  write("Value of floating point number is %f",num);
+}
+
+void Printme(int num)
+{
+  write("Value of  integer number is %d",num);
+}
+
+
+
+void Printme(int num, char units[])
+{
+  
+  write("weight of the object is %d %s",num,units);
+  
+  
+  
+}
+
+void typecasting()
+{
+   int sum;
+   sum=1.6  + 1.7;
+   write("Sum =%d",sum);
+   sum=(int)1.6 +(int) 1.7;
+   write("Sum = %d",sum);
+  
+  
+}
+
+void add()
+{
+  int c=0;
+ //  c=a+b;
+  write("Value of c = %d",c);
+  _mAccInfo.byte(0)=c;
+  output(_mAccInfo);
+  
+}
+
+
+int Power(int x, int y)
+{
+  long result;
+  int i;
+   result=1;
+  for(i=1;i<=y;i++)
+  {
+    result*=x;
+  }
+  return result;
+  
+}
+

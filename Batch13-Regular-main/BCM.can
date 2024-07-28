@@ -1,0 +1,287 @@
+/*@!Encoding:1252*/
+includes
+{
+ // #include "UserDefinedFunctions.cin"
+}
+
+
+
+variables
+{
+   /* int a=10;
+    int b=25;
+    message ACCInfo _mAccInfo;*/
+   char letter_a='a';
+   int number_days_in_year=365;
+   message ACCInfo _mAccInfo;
+   timer one_sec;
+   int j,k=2;
+    double x=33.7;
+    char p;
+   int speed_values[25]={0xA1,0x23,0x3F,0x98,0x45};
+   int speed_index=0;
+   char ECU_Name[10]="BCM";
+   char bus_type[4]={'C','A','N'};
+   int vehicle_ID[2][3]={{1,2,3},{4,5,6}};
+   int handle;
+   int brakestatus=0;
+   
+}
+    
+on start
+{
+   int index;
+   int temp;
+ // write("Value of a =%d",a);
+  handle=openFileRead("speedsample.txt",0);
+  write("Welcome to CAPL Programming!");
+  settimer(one_sec,1);
+  index=0;
+  //while(index<25)
+  //Do
+  while(index<25)
+  {
+    temp=random(250);
+    //write("%d",temp);
+    if(temp <50)
+    {
+      continue;
+    }
+    speed_values[index]=temp;
+    
+    index++;
+  }
+  //while(index<25);
+ /* for(index=0;index<25;index++)
+  {
+    write("%d",speed_values[index]);
+  }*/
+
+  TalkNM();
+}
+
+
+on message 0x501
+{
+   int temp;
+  @sysvar::NM::Bcm_Successor=this.byte(0);
+  temp=this.byte(1);
+   @sysvar::NM::Bcm_alive=temp & 0x1;
+  temp=temp>>1;
+  @sysvar::NM::Bcm_Ring=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Bcm_Limphome=temp & 0x1;
+   temp=temp>>2;
+  @sysvar::NM::Bcm_Sleep_Ind=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Bcm_Sleep_Ack=temp & 0x1;
+}
+
+on sysvar NM::Bcm_sleep_wakeup
+{
+   if(@this)
+  {
+    GotoMode_BusSleep();
+  }
+  else{
+    GotoMode_Awake();
+  }
+}
+
+on timer one_sec
+{
+  char buffer[10];
+  int result;
+ // setSignal(BCMInfo::VehicleSpeed,speed_values[speed_index]);
+ // speed_index=(++speed_index) %25;
+  
+ /* write("Value of letter_a =%c",letter_a);
+  write("Number of days in a year = %d",number_days_in_year);
+  _mAccInfo.byte(0)=0x11;
+  output(_mAccInfo);
+  write("value of j and k = %d,%d",j,k);
+  write("Value of x is %f",x);
+  write("Value of p is %c",p);
+  write("ECU name %s",ECU_Name);
+  write("Bus type %s",bus_type);
+  for(j=0;j<5;j++)
+  {
+    write("%d",values[j]);
+  }
+  for(j=0;j<2;j++)
+  {
+    for(k=0;k<3;k++)
+    {
+      write("value @ the index (%d,%d) is %d",j,k,vehicle_ID[j][k]);
+    }
+  }*/
+  
+//  result= fileGetString(buffer,elcount(buffer),handle);
+//  if(result)
+//  {
+//  //setSignal(BCMInfo::VehicleSpeed,atol(buffer));
+//  }
+//  else
+//  {
+//    fileRewind(handle);
+//    result= fileGetString(buffer,elcount(buffer),handle);
+//    //setSignal(BCMInfo::VehicleSpeed,atol(buffer));
+//  }
+ 
+  if(getSignal(ACCInfo::ACCState)==3)
+  {
+  if(brakestatus == 0 && getSignal(BCMInfo::VehicleSpeed) < getSignal(ACCInfo::TargetSpeed))
+  {
+    setSignal(BCMInfo::VehicleSpeed,getSignal(BCMInfo::VehicleSpeed)+5);
+  }
+  else
+  {
+     setSignal(BCMInfo::VehicleSpeed,getSignal(BCMInfo::VehicleSpeed)-5);
+  }
+  }
+  settimer(one_sec,1);
+   
+}
+
+
+on sysvar BCM_OnOff
+{
+    if(@this)
+    {
+      ILControlStop();
+      SilentNM();
+      
+    }
+    else
+    {
+      ILControlStart();
+      TalkNM();
+    }
+  
+  
+  
+  
+}
+
+on sysvar ReplayStart
+{
+    if(@this)
+    {
+      
+      replayStart("R1");
+      
+    }
+  
+  
+}
+
+on sysvar ReplaySuspend
+{
+   if(@this)
+  {
+    replaySuspend("R1");
+    
+  }
+  
+}
+
+on sysvar ReplayResume
+{
+  if(@this)
+  {
+    
+    replayResume("R1");
+    
+  }
+  
+  
+}
+
+
+
+on sysvar ReplayStop
+{
+  if(@this)
+  {
+    replayStop("R1");
+    
+  }
+}
+
+on stopMeasurement
+{
+  fileClose(handle);
+}
+
+on key 's'
+{
+ // add();
+  //myfunc();
+  //typecasting();
+  //write(" 5 power 3 is %d",Power(5,3));
+  //Printme(6.8);
+   //Printme(98);
+  //Printme(40,"Kg");
+}
+
+on sysvar startlogging
+{
+   char path[200];
+    
+    if(@this)
+    {
+      sysGetVariableString(sysvar::Logfilepath,path,elcount(path));
+      
+      setLogFileName(path);
+      startLogging();
+      
+    }
+  
+  
+  
+}
+
+on sysvar stoplogging
+{
+  
+    if(@this)
+    {
+      stopLogging();
+    }
+  
+}
+
+on message BCMInfo
+{
+   
+   if(this.VehicleSpeed <40)
+  {
+    
+ //   writeToLog("Danger!!!");
+     setControlBackColor("VehicleControl","Track Bar 1",makeRGB(70,209,213));
+     setControlForeColor("VehicleControl","Static Text 6",makeRGB(70,209,213));
+     enableControl("VehicleControl","Input/Output Box 1",0);
+     putValueToControl("VehicleControl","Input/Output Box 2",10);
+  }
+  else if(this.VehicleSpeed>=40 &&  this.VehicleSpeed <80)
+  {
+     setControlBackColor("VehicleControl","Track Bar 1",makeRGB(0,255,0));
+     setControlForeColor("VehicleControl","Static Text 6",makeRGB(0,255,0));
+      enableControl("VehicleControl","Input/Output Box 1",1);
+      putValueToControl("VehicleControl","Input/Output Box 2",0);
+  }
+  else if(this.VehicleSpeed>=80)
+  {
+     setControlBackColor("VehicleControl","Track Bar 1",makeRGB(255,0,0));
+     setControlForeColor("VehicleControl","Static Text 6",makeRGB(255,0,0));
+  }
+   
+}
+
+on message ACCInfo
+{
+  @sysvar::Break_Light_status=this.BrakeDecelRequest;
+  brakestatus = this.BrakeDecelRequest;
+
+}
+

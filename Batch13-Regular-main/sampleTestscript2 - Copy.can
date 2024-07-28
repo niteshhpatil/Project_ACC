@@ -1,0 +1,24 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  message 0x100 _test;
+}
+
+void MainTest ()
+{
+  TestModuleTitle ("Engine Speed Test");
+  TestModuleDescription ("Test the functionality of Tacho gauge");
+  TestGroupBegin("Functional Test", "Test Tacho at different Engine Speed");
+  Testcase1();
+  
+  TestGroupEnd();
+}
+testcase Testcase1()
+{
+
+}

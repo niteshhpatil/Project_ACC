@@ -1,0 +1,29 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+on sysvar ECM_OnOff
+{
+    if(@this)
+    {
+      ILControlStop();
+      
+    }
+    else
+    {
+      ILControlStart();
+    }
+  
+  
+  
+  
+}
+
+

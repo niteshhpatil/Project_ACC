@@ -1,0 +1,480 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+     int set_speed;
+     int vehiclespeed;
+     timer five_sec;
+     int handle;
+     int index=0;
+     msTimer onesec;
+   byte Sess_req_PR[2]={0x50,0x01};
+  byte Res_req_PR[2]={0x51,0x00};
+   byte Res_req_NR[3]={0x7F,0x11,0x00};
+   byte Sec_req_PR[4]={0x67,0x01,0x00,0x00};
+  byte seed_msb, seed_lsb, key_msb, key_lsb;
+  byte Sec_ACC_PR[2] = {0x67,0x02};
+  byte TP_Res[2] = {0x7E,0x00};
+  byte DID_P_Res[4] = {0x62,0x00,0x00,0x00};
+  char tag[10];
+  char buffer[10];
+  byte Res_Mem[2] = {0x63,0x00};
+  byte Write_P_Res[4] = {0x6E,0x00,0x00,0x00};
+   byte WriteMem_P_Res[7] = {0x7D,0x00,0x00,0x00,0x00,0x00,0x00};
+   byte Dtc_P_Res[19] = {0x59,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};//for four dtc 4x4 dtc status record values
+}
+
+
+on start
+{
+   handle = CanTpCreateConnection(0);
+      if( handle <= 0)
+      return; // error
+      CanTpSetRxIdentifier( handle, 0x620);
+      CanTpSetTxIdentifier( handle, 0x628);
+      CanTpSetSTmin( handle, 0x0214);
+      CanTpSetBlockSize( handle, 0);
+      CanTpSetOneFlowControlValue( handle, 255);
+  //setWritePath("C:\\YAHASIYASOFTWARE\\Software_Trainings\\Batch13_FastTrack");
+  //handle=openFileWrite("MeasuredSpeed.txt",0);
+  setTimer(five_sec,5);
+  setTimer(onesec,1000);
+       TalkNM();
+}
+
+on message 0x504
+{
+  int temp;
+  @sysvar::NM::Acc_Successor=this.byte(0);
+  temp=this.byte(1);
+   @sysvar::NM::Acc_alive=temp & 0x1;
+  temp=temp>>1;
+  @sysvar::NM::Acc_Ring=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Acc_Limphome=temp & 0x1;
+   temp=temp>>2;
+  @sysvar::NM::Acc_Sleep_Ind=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Acc_Sleep_Ack=temp & 0x1;
+  
+}
+
+on sysvar NM::Acc_sleep_wakeup
+{
+  if(@this)
+  {
+    GotoMode_BusSleep();
+  }
+  else{
+    GotoMode_Awake();
+  }
+}
+
+on message ICM_Info
+{
+  
+   switch(this.CruiseSwitchRequest)
+  {
+     case 0x0:
+              setSignal(ACCInfo::ACCState,0); 
+              setSignal(ACCInfo::ACCDriverInfo,0);
+              break;
+    case 0x1:  if(getsignal(ACCInfo::ACCState)!=5)
+             {
+              setSignal(ACCInfo::ACCState,2); // set system state to standby;
+              setSignal(ACCInfo::ACCDriverInfo,2);
+            }
+              break;
+    case 0x2:
+                if(getsignal(ACCInfo::ACCState)==0x2 && getsignal(ICM_Info::BrakeSwitch1) == 0 && getsignal(ECMInfo::BrakeSwitch2)== 0 && vehiclespeed > 40)
+                {
+                write("vehicle speed is : %d",vehiclespeed);
+                setSignal(ACCInfo::ACCState,3);
+                setSignal(ACCInfo::ACCDriverInfo,3);
+                }
+              
+              if(getSignal(ACCInfo::ACCState) == 0x3)
+              {
+                set_speed = vehiclespeed;
+                setSignal(ACCInfo::TargetSpeed,set_speed);
+              }
+              break;
+     case 0x3: if(getSignal(ACCInfo::ACCState) == 3)
+              {
+                setSignal(ACCInfo::ACCState,2);
+                setSignal(ACCInfo::ACCDriverInfo,2);
+                setSignal(ACCInfo::TargetSpeed,0);
+                //setSignal(ACCInfo::BrakeDecelRequest,0);
+              }
+              break;
+      case 0x4: if(getSignal(ACCInfo::ACCState) == 2) 
+                {
+                setSignal(ACCInfo::ACCState,3);
+                setSignal(ACCInfo::ACCDriverInfo,3);
+                setSignal(ACCInfo::TargetSpeed,set_speed);
+    
+                }
+                break;
+      case 0x5: if(getSignal(ACCInfo::ACCState) == 3) 
+                {
+                 @sysvar::TimeGap += 0.001;   
+                }
+              break;
+      case 0x6: if(getSignal(ACCInfo::ACCState) == 3) 
+                {
+                 @sysvar::TimeGap -= 0.001;   
+                }
+              break;
+  }
+  
+  if(this.BrakeSwitch1)
+   {
+     setSignal(ACCInfo::ACCState,2);
+     setSignal(ACCInfo::ACCDriverInfo,2);
+   }
+  
+  
+  
+  
+}
+
+on sysvar ForwardVehicleStatus
+{
+
+  if(@this == 1)
+  {
+    setSignal(ACCInfo::TargetSpeed,@sysvar::clearance/@sysvar::TimeGap);   
+  }
+  else
+  {
+    setSignal(ACCInfo::TargetSpeed,set_speed);
+  }
+}
+
+on sysvar Ignition
+{
+  if(@this==0)
+  {
+    setSignal(ACCInfo::ACCState,0);
+    setSignal(ACCInfo::ACCDriverInfo,0);
+    setSignal(ACCInfo::TargetSpeed,0);
+    setSignal(BCMInfo::VehicleSpeed,0);
+  }
+  
+}
+
+on timer five_sec
+{
+  char buffer[10];
+  char tag[10];
+  int vs=0;
+ /* vs=getSignal(BCMInfo::VehicleSpeed);   // we read vehicle speed and store in the variable called vs
+  ltoa(vs,buffer,10);    // we convert vehicle speed to string
+  strncat(buffer,"\n",strlen(buffer)+2);  // concat new line char with buffer
+  filePutString(buffer,elcount(buffer),handle);  // write buffer to the file
+  */
+  
+  
+  snprintf(tag,elcount(tag),"v%d",index+1);
+  getProfileString("vspeed",tag,"0",buffer,elcount(buffer),"profiledfile.txt");
+ // setSignal(BCMInfo::VehicleSpeed,atol(buffer));
+  
+  snprintf(tag,elcount(tag),"ac%d",index+1);
+  getProfileString("accstate",tag,"0",buffer,elcount(buffer),"profiledfile.txt");
+ // setSignal(ACCInfo::ACCState,atol(buffer));
+  index=++index%4;
+
+  setTimer(five_sec,5);  // restart the timer;
+}
+
+on key 'z'
+{
+  cancelTimer(five_sec);  // cancel five sec timer
+  fileClose(handle);      // close file
+  
+}
+
+//on sysvar temp_sys_var
+//{
+//  if(@this==1)
+//  {
+//    write("YOu set the value to 1");
+//  }
+//  
+//}
+
+on key *
+{
+  write("You Pressed %c",this);
+}
+
+on sysvar ACC_OnOff
+{
+    if(@this)
+    {
+      ILControlStop();
+      SilentNM();
+      
+    }
+    else
+    {
+      ILControlStart();
+      TalkNM();
+    }
+  
+  
+  
+  
+}
+
+
+
+
+on message CAN1.*
+{
+   // message CAN2.* m;
+  message 0x380 m={dlc=4};
+  m.can=2;
+  if(this.DIR==RX)        // if it is a received frame 
+    {
+      if(this.CAN==1)
+        
+     {
+     // m=this;
+      if(this.id==0x503)
+      {
+        m.byte(0)=this.byte(0);
+         m.byte(1)=this.byte(1);
+      }
+        if(this.id==0x501)
+      {
+        m.byte(2)=this.byte(0);
+         m.byte(3)=this.byte(1);
+      }
+      
+      output(m);      // send it to the other channel 
+      }  
+    }
+
+  
+}
+
+on key 's'
+{
+  write("Set speed is %d",set_speed);
+}
+
+on message BCMInfo
+{
+       
+  vehiclespeed=this.VehicleSpeed;
+  
+  if(this.VehicleSpeed >80 && this.VehicleSpeed < 120)
+    {
+      writeEx(-3,2,"High Speed!\n");  
+      
+    }
+    else if(this.VehicleSpeed >=120)
+    {
+      writeEx(-3,3,"Danger! Speed too high\n");
+    }
+    else
+    {
+      writeEx(-3,1,"Normal Speed\n");
+    }
+  
+  if(this.VehicleSpeed < 40 && getSignal(ACCInfo::ACCState) == 3 && @sysvar::Ignition > 0)
+  {
+    setSignal(ACCInfo::ACCState,2);
+    setSignal(ACCInfo::ACCDriverInfo,4);
+  }
+}
+
+on message 0x620
+{
+ 
+
+  if(this.byte(0)<8)
+  {
+    write("entered the message620");
+    switch (this.byte(1))
+    {
+      case 0x10:Sess_req_PR[1]=this.byte(2);
+      CanTpSendData(handle, Sess_req_PR,elcount(Sess_req_PR));
+      break;
+      case 0x11:
+        
+        if(this.byte(0)<0x02){
+          Res_req_NR[2]=0x13;
+        CanTpSendData(handle,Res_req_NR,elcount(Res_req_NR));
+        }
+        else{
+          
+          
+        if(this.byte(2)<0x02)
+      {
+        Res_req_PR[1]=this.byte(2);
+        
+       write("entered the reset_sesson");
+        
+      CanTpSendData(handle,Res_req_PR,elcount(Res_req_PR));
+      }
+     
+        
+      else{
+        Res_req_NR[2]=0x12;
+        CanTpSendData(handle,Res_req_NR,elcount(Res_req_NR));
+      }
+        }
+      break;
+     case 0x27:
+        if(this.byte(2) == 1)
+        {
+        Sec_req_PR[1] = this.byte(2);
+        Sec_req_PR[2] = random(255);
+        Sec_req_PR[3] = random(100);
+        seed_msb = Sec_req_PR[2];
+        seed_lsb = Sec_req_PR[3];
+        key_msb = seed_msb + 1;
+        key_lsb = seed_lsb + 1;
+        CanTpSendData(handle,Sec_req_PR,elcount(Sec_req_PR));      
+         }
+        else
+        {
+          if(key_msb == this.byte(3) && key_lsb == this.byte(4))
+          {
+            CanTpSendData(handle,Sec_ACC_PR,elcount(Sec_ACC_PR));
+          }
+        }
+         break;
+        case 0x3E:
+           if(this.byte(2) == 0x00)
+        {
+          CanTpSendData(handle,TP_Res,elcount(TP_Res));
+        }
+         break;
+      case 0x19:
+        Dtc_P_Res[1]=this.byte(2);
+        Dtc_P_Res[3]=0x00;
+        Dtc_P_Res[4]=0X20;
+        Dtc_P_Res[5]=0x11;
+        Dtc_P_Res[6]=0xFF;
+         Dtc_P_Res[7]=0x00;
+        Dtc_P_Res[8]=0X20;
+        Dtc_P_Res[9]=0x12;
+        Dtc_P_Res[10]=0xFF;
+         Dtc_P_Res[11]=0x00;
+        Dtc_P_Res[12]=0X20;
+        Dtc_P_Res[13]=0x13;
+        Dtc_P_Res[14]=0xFF;
+         Dtc_P_Res[15]=0x00;
+        Dtc_P_Res[16]=0X20;
+        Dtc_P_Res[17]=0x14;
+        Dtc_P_Res[18]=0xFF;
+        CanTpSendData(handle,Dtc_P_Res,elcount(Dtc_P_Res));
+        
+        break;
+        
+        case 0x22:
+           if(this.byte(2) == 0x10 && this.byte(3) == 0x20)
+          {
+            DID_P_Res[1] = 0x10;
+            DID_P_Res[2] = 0x20;
+            DID_P_Res[3] = set_speed;
+            CanTpSendData(handle,DID_P_Res,elcount(DID_P_Res));
+           
+          }
+           break;
+         case 0x23:
+              snprintf(tag,elcount(tag),"0x%02x%02x",this.byte(2),this.byte(3));
+              getProfileString("NVM",tag,"0",buffer,elcount(buffer),"ACC_Mem.txt");
+              Res_Mem[1] = atol(buffer);
+              write("speed %s", buffer);
+              write("tag %s", tag);
+              CanTpSendData(handle,Res_Mem,elcount(Res_Mem));
+        break;
+      //  writeProfileString
+         case 0x2E:
+           if(this.byte(2) == 0x10 && this.byte(3) == 0x20)
+        {
+         // long writeProfileString(char section[], char entry[], char value[], char filename[]);
+           Write_P_Res[1]=this.byte(2);
+          Write_P_Res[2]=this.byte(3);
+          Write_P_Res[3]=this.byte(4);
+         // snprintf(tag,elcount(tag),"0x%02x%02x",this.byte(2),this.byte(3));
+          ltoa(this.byte(4),buffer,elcount(buffer));
+          
+         writeProfileString("NVM","0x1000",buffer,"ACC_Mem.txt");
+          CanTpSendData(handle, Write_P_Res,elcount( Write_P_Res));
+         
+       }
+        break;
+      case 0x3D:
+         if(this.byte(3) == 0x10 && this.byte(4) == 0x00)
+        {
+          Write("entered the case 0x3D");
+          WriteMem_P_Res[2]=0x10;
+          WriteMem_P_Res[3]=0x00;
+          WriteMem_P_Res[4]=this.byte(5);
+          WriteMem_P_Res[5]=this.byte(6);
+          WriteMem_P_Res[6]=this.byte(7);
+           ltoa(this.byte(7),buffer,elcount(buffer));
+          writeProfileString("NVM","0x1000",buffer,"ACC_Mem.txt");
+          CanTpSendData(handle, WriteMem_P_Res,elcount(  WriteMem_P_Res));
+        }
+         break;
+        
+       }
+    
+  }
+  else
+  {
+    
+  }
+
+}
+
+on message ACCInfo
+{
+  if(this.ACCState == 5)
+  {
+    setSignal(ACCInfo::ACCState,0);
+    setSignal(ACCInfo::ACCDriverInfo,0);
+  }
+}
+
+on sysvar BreakPedal
+{
+  if(@this)
+  {
+    setSignal(ACCInfo::ACCState,0);
+    setSignal(ACCInfo::ACCDriverInfo,0);
+  }
+}
+
+on message ECMInfo
+{
+  if(this.BrakeSwitch2)
+  {
+    setSignal(ACCInfo::ACCState,2);
+  }
+}
+
+on timer onesec
+{
+  if(getSignal(ACCInfo::TargetSpeed) < vehiclespeed && @sysvar::ForwardVehicleStatus == 1)
+  {
+    setSignal(ACCInfo::BrakeDecelRequest,1);
+  }
+  else
+  {
+    setSignal(ACCInfo::BrakeDecelRequest,0);
+  }
+  setTimer(onesec,1);
+  
+}
+

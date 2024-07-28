@@ -1,0 +1,51 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+void MainTest ()
+{
+TestModuleTitle ("Verification of ACC state");
+TestModuleDescription ("To verify the state of ACC system");
+TestGroupBegin("Basic State Test", "To verify the state of ACC system");
+ACCStateCheck();
+//Testcase2();
+TestGroupEnd();
+}
+testcase ACCStateCheck()
+{
+  @sysvar::Ignition = 0;
+  testStep("Ignition = 0","Set Ignition to OFF");
+  testWaitForTimeout(1000);
+  @sysvar::Ignition = 2;
+  testStep("Ignition = 2","Set Ignition to Run");
+  setSignal(BCMInfo::VehicleSpeed,80);
+  testWaitForTimeout(1000);
+  setSignal(ICM_Info::CruiseSwitchRequest,1);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000);  
+  testValidateSignalMatch("Check ACC state is Standby",ACCInfo::ACCState,2); 
+  testValidateTesterConfirmation("Is ACC switched to standby ?","Checking ACC state",1);
+  
+  
+  setSignal(ICM_Info::CruiseSwitchRequest,2);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000); 
+  testValidateSignalMatch("Check ACC state is Active",ACCInfo::ACCState,3); 
+  testValidateTesterConfirmation("Is ACC switched to Active ?","Checking ACC state",1);
+     
+  
+  setSignal(ICM_Info::CruiseSwitchRequest,0);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);
+  testValidateSignalMatch("Check ACC state is OFF",ACCInfo::ACCState,0); 
+  testValidateTesterConfirmation("Is ACC switched to OFF ?","Checking ACC state",1);
+}

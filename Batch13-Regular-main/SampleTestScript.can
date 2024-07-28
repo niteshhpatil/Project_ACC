@@ -1,0 +1,99 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+
+
+
+void MainTest ()
+{
+  TestModuleTitle ("Vehicle Speed Check");
+  TestModuleDescription ("Validate Speedo gauge at different Speed");
+  TestGroupBegin("Functional Tests", "Testing the functionality");
+  VehicleSpeedTest();
+  
+  TestGroupEnd();
+}
+testcase VehicleSpeedTest()
+{
+   int result;
+	setSignal(Speed::VehicleSpeed,0);
+  testWaitForTimeout(1000);
+  result=testValidateSignalMatch("Check Vehicle Speed ==0",Speed::VehicleSpeed,0);
+  if(result==0)
+  {
+    testStepPass("Vehicle speed is set to Zero");
+    
+  }
+  else
+  {
+    
+    testStepFail("Vehile speed is not set to zero");
+  }
+  
+  result=testWaitForTesterConfirmation("Is speedo point to zero?");
+  
+  if(result)
+  {
+    testStepPass("Speedo points to zero");
+  }
+  else
+  {
+    testStepFail("Speedo does not point to zero");
+  }
+  
+  setSignal(Speed::VehicleSpeed,127);
+  testWaitForTimeout(1000);
+  result=testValidateSignalMatch("Check Vehicle Speed ==0",Speed::VehicleSpeed,127);
+  if(result==0)
+  {
+    testStepPass("Vehicle speed is set to 127");
+    
+  }
+  else
+  {
+    
+    testStepFail("Vehile speed is not set to 127");
+  }
+  
+  result=testWaitForTesterConfirmation("Is speedo point to 127 km?");
+  
+  if(result)
+  {
+    testStepPass("Speedo points to 127");
+  }
+  else
+  {
+    testStepFail("Speedo does not point to 127");
+  }
+  
+  setSignal(Speed::VehicleSpeed,255);
+  testWaitForTimeout(1000);
+  result=testValidateSignalMatch("Check Vehicle Speed ==0",Speed::VehicleSpeed,255);
+  if(result==0)
+  {
+    testStepPass("Vehicle speed is set to 255");
+    
+  }
+  else
+  {
+    
+    testStepFail("Vehile speed is not set to 255");
+  }
+  
+  result=testWaitForTesterConfirmation("Is speedo point to 255 km?");
+  
+  if(result)
+  {
+    testStepPass("Speedo points to 255");
+  }
+  else
+  {
+    testStepFail("Speedo does not point to 255");
+  }
+  
+}
+
+

@@ -1,0 +1,28 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  mstimer t1;
+  
+}
+
+on key 'v'
+{
+  setTimer(t1,1000);
+}
+
+on timer t1
+{
+  write("test");
+}
+
+
+void MainTest ()
+{
+  testWaitForTimeout(10000);
+}
+

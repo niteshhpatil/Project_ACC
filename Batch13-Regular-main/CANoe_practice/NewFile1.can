@@ -1,0 +1,16 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+on start
+{
+  write("Welcome to CAPL Programming!");
+}
+

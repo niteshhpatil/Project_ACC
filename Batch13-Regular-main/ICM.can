@@ -1,0 +1,81 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+on start
+{
+   TalkNM();
+}
+
+on message 0x503
+{
+   int temp;
+  @sysvar::NM::Icm_Successor=this.byte(0);
+  temp=this.byte(1);
+   @sysvar::NM::Icm_alive=temp & 0x1;
+  temp=temp>>1;
+  @sysvar::NM::Icm_Ring=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Icm_Limphome=temp & 0x1;
+   temp=temp>>2;
+  @sysvar::NM::Icm_Sleep_Ind=temp & 0x1;
+   temp=temp>>1;
+  @sysvar::NM::Icm_Sleep_Ack=temp & 0x1;
+}
+
+on sysvar NM::Icm_sleep_wakeup
+{
+   if(@this)
+  {
+    GotoMode_BusSleep();
+  }
+  else{
+    GotoMode_Awake();
+  }
+  
+}
+
+on message ACCInfo
+{
+  switch(this.ACCDriverInfo)
+  {
+    case 0: sysSetVariableString(sysvar::Driver_Info,"Acc OFF");
+             break;
+    case 1: sysSetVariableString(sysvar::Driver_Info,"Acc ON");
+            break;
+    case 2: sysSetVariableString(sysvar::Driver_Info,"Acc Standby");
+            break;
+    case 3: sysSetVariableString(sysvar::Driver_Info,"Acc Active");
+            break;
+    case 4: sysSetVariableString(sysvar::Driver_Info,"Driver Intervention Required");
+            break;
+      
+  }
+}
+
+on sysvar ICM_OnOff
+{
+    if(@this)
+    {
+      ILControlStop();
+      SilentNM();
+      
+    }
+    else
+    {
+      ILControlStart();
+      TalkNM();
+    }
+  
+  
+  
+  
+}
+

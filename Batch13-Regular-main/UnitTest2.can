@@ -1,0 +1,30 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+   int a =21;
+   int b= 56;
+   mstimer t1;
+}
+
+on key 'k'
+{
+  setTimer(t1,1000);
+}
+
+void MainTest ()
+{
+  write("sum of a, b = %d",a+b);
+  testWaitForTimeout(10000);
+}
+
+on timer t1
+{
+  write("I am from timer t1");
+  setTimer(t1,1000);
+}
+

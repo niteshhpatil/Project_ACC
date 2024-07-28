@@ -1,0 +1,25 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+ msTimer timer_VDC_A3;
+  message VDC_A3 temp_VDC_A3;
+}
+ 
+
+on start
+{
+  setTimer (temp_VDC_A3);
+}
+
+On timer  timer_VDC_A3
+{
+  
+  output (temp_VDC_A3);
+  setTimer (timer_VDC_A3,20);
+
+}

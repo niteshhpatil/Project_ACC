@@ -1,0 +1,90 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+void MainTest ()
+{
+TestModuleTitle ("Verification of Brake Switch Behaviour");
+TestModuleDescription ("To verify the Brake Switch Behaviour");
+TestGroupBegin("Basic Brake Test", "To verify the Brake Switch Behaviour");
+BrakeSwitch1Test();
+BrakeSwitch2Test();
+//Testcase2();
+TestGroupEnd();
+}
+testcase BrakeSwitch1Test()
+{
+  @sysvar::Ignition = 0;
+  testStep("Ignition = 0","Set Ignition to OFF");
+  testWaitForTimeout(1000);
+  @sysvar::Ignition = 2;
+  testStep("Ignition = 2","Set Ignition to Run");
+  setSignal(BCMInfo::VehicleSpeed,80);
+  testWaitForTimeout(1000);
+  setSignal(ICM_Info::CruiseSwitchRequest,1);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000);  
+  testValidateSignalMatch("Check ACC state is Standby",ACCInfo::ACCState,2); 
+  testValidateTesterConfirmation("Is ACC switched to standby ?","Checking ACC state",1);
+  
+  
+  setSignal(ICM_Info::CruiseSwitchRequest,2);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000); 
+  testValidateSignalMatch("Check ACC state is Active",ACCInfo::ACCState,3); 
+  testValidateTesterConfirmation("Is ACC switched to Active ?","Checking ACC state",1);
+     
+  
+  setSignal(ICM_Info::BrakeSwitch1,1);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::BrakeSwitch1,0);   
+  testWaitForTimeout(1000);
+  
+  
+  testValidateSignalMatch("Check ACC state is Standby",ACCInfo::ACCState,2); 
+  testValidateTesterConfirmation("Is ACC switched to Standby ?","Checking ACC state",1);
+  
+}
+
+testcase BrakeSwitch2Test()
+{
+  @sysvar::Ignition = 0;
+  testStep("Ignition = 0","Set Ignition to OFF");
+  testWaitForTimeout(1000);
+  @sysvar::Ignition = 2;
+  testStep("Ignition = 2","Set Ignition to Run");
+  setSignal(BCMInfo::VehicleSpeed,80);
+  testWaitForTimeout(1000);
+  setSignal(ICM_Info::CruiseSwitchRequest,1);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000);  
+  testValidateSignalMatch("Check ACC state is Standby",ACCInfo::ACCState,2); 
+  testValidateTesterConfirmation("Is ACC switched to standby ?","Checking ACC state",1);
+  
+  
+  setSignal(ICM_Info::CruiseSwitchRequest,2);
+  testWaitForTimeout(250);
+  setSignal(ICM_Info::CruiseSwitchRequest,7);   
+  testWaitForTimeout(1000); 
+  testValidateSignalMatch("Check ACC state is Active",ACCInfo::ACCState,3); 
+  testValidateTesterConfirmation("Is ACC switched to Active ?","Checking ACC state",1);
+     
+  
+  setSignal(ECMInfo::BrakeSwitch2,1);
+  testWaitForTimeout(250);
+  setSignal(ECMInfo::BrakeSwitch2,0);   
+  testWaitForTimeout(1000); 
+  testValidateSignalMatch("Check ACC state is Standby",ACCInfo::ACCState,2); 
+  testValidateTesterConfirmation("Is ACC switched to Standby ?","Checking ACC state",1);
+  
+}

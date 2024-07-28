@@ -1,0 +1,207 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  long handle = 0;
+  byte Greeting[11]={'H','E','L','L','O',' ','W','O','R','L','D'};
+  byte Diagsessionreq[2]={0x10,0x01};
+  byte Reset_Req[2]={0x11,0x0};
+  byte Req_seed[2]={0x27,0x01};
+  byte submit_key1[4] = {0x27,0x02,0x00,0x00};
+  byte TP_Switch_Arr[2] = {0x3E,0x00};
+  timer fivesec;
+  byte readDID[3]={0x22,0x00,0x00};
+  byte ReadMem[5]={0x23,0x00,0x00,0x00,0x00};
+  byte Write_DID[4] = {0x2E,0x00,0x00,0x00};
+   byte WriteMem[7]={0x3D,0x00,0x00,0x00,0x00,0x00,0x00};
+  byte readdtc[2] = {0x19,0x00};
+  
+}
+
+on sysvar DTCgroup::ReadDTC
+{
+  if(@this)
+  {
+    readdtc[1]=@sysvar::DTCgroup::Dtcsubfun;
+    CanTpSendData(handle,readdtc,elcount(readdtc));
+  }
+}
+
+on sysvar Read_Memory
+{
+  if(@this)
+  {
+    int temp;
+    ReadMem[1] = @sysvar::ADD_MSB;
+    ReadMem[2] = @sysvar::ADD_LSB;
+    temp = @sysvar::Memory_Size;
+    ReadMem[4] = temp & 0xFF; 
+    temp = temp >> 8;
+    ReadMem[3] = temp & 0xFF; 
+    CanTpSendData(handle,ReadMem,elcount(ReadMem));
+  }
+  
+}
+
+on sysvar WriteDID
+{
+  if(@this)
+  {
+    Write_DID[1] = @sysvar::DID_MSB;
+    Write_DID[2] = @sysvar::DID_LSB;
+    Write_DID[3] = @sysvar::Write_Byte;
+    CanTpSendData(handle,Write_DID,elcount(Write_DID));
+  }
+}
+
+on sysvar Reset_Button
+{
+  if(@this)
+  {
+    Reset_Req[1]=@sysvar::Reset_type;
+    if(@sysvar::Invalid_Reset_req==1)
+    {
+      CanTpSendData(handle,Reset_Req,1);
+      
+    }
+    else{
+    CanTpSendData(handle,Reset_Req,elcount(Reset_Req));
+    }
+    
+  }
+}
+
+on sysvar Read_DID
+{
+  if(@this)
+  {
+    readDID[1] = @sysvar::DID_MSB;
+    readDID[2] = @sysvar::DID_LSB;
+    CanTpSendData(handle,readDID,elcount(readDID));
+  }
+}
+
+on sysvar Security_Req
+{
+  if(@this)
+  {
+    CanTpSendData(handle,Req_seed,elcount(Req_seed));
+  }
+}
+
+on message 0x628
+{
+  if(this.byte(0)<8)
+  {
+    switch (this.byte(1))
+    {
+      case 0x67:
+        if(this.byte(2) == 1)
+        {
+          @sysvar::Seed_MSB = this.byte(3);
+          @sysvar::Seed_LSB = this.byte(4);
+          @sysvar::KEY_MSB = this.byte(3) + 1;
+          @sysvar::KEY_LSB = this.byte(4) + 1;
+        }
+
+    }
+   }
+  else
+  {
+    
+  }
+}
+
+
+
+
+
+on sysvar WriteMem
+{
+  if(@this)
+  {
+    int temp;
+    WriteMem[2]=@sysvar::ADD_MSB;
+    WriteMem[3]=@sysvar::ADD_LSB;
+     
+   
+   temp = @sysvar::Memory_Size;
+    WriteMem[5] = temp & 0xFF; 
+    temp = temp >> 8;
+    WriteMem[4] = temp & 0xFF; 
+    WriteMem[6]=@sysvar::W_mem_byte;
+    CanTpSendData(handle,WriteMem,elcount(WriteMem));
+  }
+  
+}
+
+on sysvar TP_Switch
+{
+  if(@sysvar::Tester_Present_Res_Type == 0)
+  {
+    TP_Switch_Arr[1] = 0x00;
+  }
+  else
+  {
+    TP_Switch_Arr[1] = 0x80;
+  }
+  if(@this)
+  {    
+    CanTpSendData(handle,TP_Switch_Arr,elcount(TP_Switch_Arr));
+    setTimer(fivesec,5);
+  }
+  else
+  {
+    cancelTimer(fivesec);
+  }
+
+}
+
+on sysvar Submit_Key
+{
+  if(@this)
+  {
+    submit_key1[2] = @sysvar::KEY_MSB;
+    submit_key1[3] = @sysvar::KEY_LSB;
+    CanTpSendData(handle,submit_key1,elcount(submit_key1));
+  }
+  
+}
+
+on timer fivesec
+{
+  CanTpSendData(handle,TP_Switch_Arr,elcount(TP_Switch_Arr));
+  setTimer(fivesec,5);
+}
+
+on sysvar SessionRequest
+{
+  if(@this)
+  {
+    Diagsessionreq[1]=@sysvar::Diagsession;
+    CanTpSendData(handle, Diagsessionreq,elcount(Diagsessionreq));
+  }
+}
+
+on start
+{
+  handle = CanTpCreateConnection(0);
+if( handle <= 0)
+  return; // error
+CanTpSetRxIdentifier( handle, 0x628);
+CanTpSetTxIdentifier( handle, 0x620);
+CanTpSetSTmin( handle, 0x0214);
+CanTpSetBlockSize( handle, 0);
+CanTpSetOneFlowControlValue( handle, 255);
+
+}
+
+on key 'a'
+{
+  CanTpSendData(handle, Greeting,elcount(Greeting));
+}
+

@@ -1,0 +1,99 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+  message 0x100 _test;
+}
+
+void MainTest ()
+{
+  TestModuleTitle ("Engine Speed Test");
+  TestModuleDescription ("Test the functionality of Tacho gauge");
+  TestGroupBegin("Functional Test", "Test Tacho at different Engine Speed");
+  Testcase1();
+ 
+  TestGroupEnd();
+}
+testcase Testcase1()
+{
+   int result;
+	setSignal(EngineData::EngSpeed,0);
+  testWaitForTimeout(500);
+  result=testValidateSignalMatch("Check Engine Speed = 0",EngineData::EngSpeed,0);
+  if(result==0)
+  {
+    testStepPass("Engine speed is zero in the CAN bus");
+  }
+  else
+  {
+    testStepFail("Engine speed is not zero in the CAN bus");
+  }
+  
+  result=testWaitForTesterConfirmation("Is Tacho point zero?");
+  
+  if(result==1)
+  {
+    
+    testStepPass("Taho point zero in the gauge");
+    
+  }
+  else
+  {
+    testStepFail("Tacho does not poin zero");
+  }
+    
+  setSignal(EngineData::EngSpeed,4000);
+  testWaitForTimeout(500);
+  result=testValidateSignalMatch("Check Engine Speed = 4000",EngineData::EngSpeed,4000);
+  if(result==0)
+  {
+    testStepPass("Engine speed is 4000 RPM in the CAN bus");
+  }
+  else
+  {
+    testStepFail("Engine speed is not 4000 RPM in the CAN bus");
+  }
+  
+  result=testWaitForTesterConfirmation("Is Tacho pointing 4000?");
+  
+  if(result==1)
+  {
+    
+    testStepPass("Taho point 4000 in the gauge");
+    
+  }
+  else
+  {
+    testStepFail("Tacho does not poin 4000 RPM");
+  }
+   setSignal(EngineData::EngSpeed,8000);
+  testWaitForTimeout(500);
+  result=testValidateSignalMatch("Check Engine Speed = 8000",EngineData::EngSpeed,8000);
+  if(result==0)
+  {
+    testStepPass("Engine speed is 8000 RPM in the CAN bus");
+  }
+  else
+  {
+    testStepFail("Engine speed is not 8000 RPM in the CAN bus");
+  }
+  
+  result=testWaitForTesterConfirmation("Is Tacho pointing 8000?");
+  
+  if(result==1)
+  {
+    
+    testStepPass("Taho point 8000 in the gauge");
+    output(_test);
+  }
+  else
+  {
+    testStepFail("Tacho does not poin 8000 RPM");
+  }
+  
+  
+}

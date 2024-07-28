@@ -1,0 +1,34 @@
+/*@!Encoding:1252*/
+includes
+{
+  
+}
+
+variables
+{
+   mstimer t1;
+}
+
+
+void MainTest ()
+{
+  test1();
+}
+
+testcase test1()
+{
+  testWaitForTimeout(20000);
+  
+}
+
+on timer t1
+{
+  write("I am the timer of Unit test module");
+  setTimer(t1,1000);
+}
+
+on key 'a'
+{
+  setTimer(t1,1000);
+}
+
